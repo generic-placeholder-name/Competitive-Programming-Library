@@ -1,0 +1,71 @@
+#pragma once
+
+constexpr int INF=1e9+7;
+struct Edge {
+    int u, v, cap, cost;
+ 
+    Edge() {}
+    Edge(int u, int v, int cap, int cost): u(u), v(v), cap(cap), cost(cost) {}
+};
+ 
+vvi adj, cost, cap;
+vector<Edge> edges;
+ 
+void spfa(int n, int src, vi& d, vi& p) {
+    d.assign(n, INF);
+    p.assign(n, -1);
+    vb vis(n, 0);
+    queue<int> q;
+    q.push(src);
+    vis[src]=1;
+    d[src]=0;
+    while(!q.empty()) {
+        int u=q.front(); q.pop();
+        vis[u]=0;
+        for(int v: adj[u]) {
+            if(cap[u][v]>0&&d[v]>d[u]+cost[u][v]) {
+                d[v]=d[u]+cost[u][v];
+                p[v]=u;
+                if(!vis[v]) q.push(v), vis[v]=1;
+            }
+        }
+    }
+}
+ 
+void init_flow(int n) {
+    adj.assign(n, vi());
+    cost.assign(n, vi(n, 0));
+    cap.assign(n, vi(n, 0));
+    for(auto& E: edges) {
+        adj[E.u].pb(E.v);
+        adj[E.v].pb(E.u);
+        cost[E.u][E.v]=E.cost;
+        cost[E.v][E.u]=-E.cost;
+        cap[E.u][E.v]=E.cap;
+    }
+}
+ 
+int min_cost_flow(int n, int k, int s, int t) {
+    init_flow(n);
+    int flow=0, cst=0;
+    vi d, p;
+    while(flow<k) {
+        spfa(n, s, d, p);
+        if(d[t]==INF) break;
+        int f=k-flow, cur=t;
+        while(cur!=s) {
+            f=min(f, cap[p[cur]][cur]);
+            cur=p[cur];
+        }
+        flow+=f;
+        cst+=f*d[t];
+        cur=t;
+        while(cur!=s) {
+            cap[p[cur]][cur]-=f;
+            cap[cur][p[cur]]+=f;
+            cur=p[cur];
+        }
+    }
+    if(flow<k) return INF;
+    else return cst;
+}
